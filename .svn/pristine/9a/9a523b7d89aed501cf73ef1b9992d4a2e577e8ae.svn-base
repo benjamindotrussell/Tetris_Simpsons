@@ -1,0 +1,180 @@
+/*
+ * TCSS 305 - Project Tetris
+ */
+package view;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.util.Observable;
+import java.util.Observer;
+
+import javax.swing.JPanel;
+import javax.swing.Timer;
+
+import model.Board;
+import model.TetrisPiece;
+
+/**
+ * Class generates a sub-panel for the game info.
+ * @author Ben Russell
+ * @version 1.0
+ */
+class InfoPanel extends JPanel implements Observer {
+    /** constant for the integer five. */
+    public static final int FIVE = 5;
+    /** constant for the integer forty. */
+    public static final int FORTY = 40;
+    /** constant for the integer 100. */
+    public static final int ONE_HUNDRED = 100; 
+    /** constant for a 3. */
+    public static final int THREE = 3;
+    /** constant for 1200. */
+    public static final int TWELVE_HUNDRED = 1200;
+    /** constant for the number 4. */
+    public static final int FOUR = 4;
+    /**default serial id. */
+    private static final long serialVersionUID = 1L;
+    
+   
+    /** the number of lines. */
+    private int myLines;
+    /** the current level. */
+    private int myLevel;
+    /** the lines until the nest level. */
+    private int myNextLevel;
+    /** the current score. */
+    private int myScore;
+    /** boolean check for a first instance. */
+    private boolean myFirstInstance;
+    /** field for the timer. */
+    private final Timer myTimer;
+    /** boolean check for new game. */
+    private boolean myNewGame;
+    /**
+     * constructor.
+     * @param theBoard the board
+     * @param theTimer the swing timer
+     */
+    public InfoPanel(final Board theBoard, final Timer theTimer) {
+        super();
+        final Dimension d = new Dimension(GamePanel.PANEL_WIDTH, 200);
+        setPreferredSize(d);
+        setBackground(Color.RED);
+        setPreferredSize(d);
+        addContainers(theBoard, theTimer);
+        myTimer = theTimer;
+        theBoard.addObserver(this);
+        myLevel = 1;
+        myFirstInstance = true;
+    }
+    /**
+     * add the containers to the panel.
+     * @param theBoard the board
+     * @param theTimer the timer
+     */
+    private void addContainers(final Board theBoard, final Timer theTimer) {
+        add(new NewGamePanel(theBoard, theTimer));
+        add(new PausePanel(theBoard, theTimer));
+        add(new ControlInfoPanel());
+        add(new ScoreInfoPanel());
+    }
+    @Override
+    public void paintComponent(final Graphics theGraphics) {
+        super.paintComponent(theGraphics);
+        final Graphics2D g2D = (Graphics2D) theGraphics;
+        g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                            RenderingHints.VALUE_ANTIALIAS_ON);
+        drawInfo(g2D);
+
+    }
+    /**
+     * draw information on the panel.
+     * @param theG the graphics
+     */
+    private void drawInfo(final Graphics2D theG) {
+        final Font font = new Font(null, NewGamePanel.TEN
+                                   , NewGamePanel.TEN * 2 - 2);        
+        theG.setFont(font);
+        theG.setPaint(Color.BLACK);
+        
+        theG.drawString("Level: ", InfoPanel.FIVE, ONE_HUNDRED + FORTY);
+        theG.drawString(Integer.toString(myLevel), FORTY + NewGamePanel.TEN * 2 
+                        , ONE_HUNDRED + FORTY);
+        
+        theG.drawString("Lines: ", ONE_HUNDRED , ONE_HUNDRED + FORTY);
+        theG.drawString(Integer.toString(myLines), ONE_HUNDRED + FORTY + NewGamePanel.TEN * 2
+                        , ONE_HUNDRED + FORTY);
+        
+        theG.drawString("Lines till next level: "
+                        , InfoPanel.FIVE, ONE_HUNDRED + FORTY + NewGamePanel.TEN * 2);
+        theG.drawString(Integer.toString(myNextLevel)
+                        , ONE_HUNDRED + FORTY + NewGamePanel.TEN * 2
+                       , ONE_HUNDRED + FORTY + NewGamePanel.TEN * 2);
+        
+        theG.drawString("Score: "
+                        , InfoPanel.FIVE, ONE_HUNDRED + FORTY + FORTY);
+        
+        theG.drawString(Integer.toString(myScore), FORTY + NewGamePanel.TEN * 2
+                           , ONE_HUNDRED + FORTY + FORTY);
+       
+    }
+    
+    @Override
+    public void update(final Observable theObservable, final Object theData) {
+        if (theObservable instanceof Board && theData instanceof TetrisPiece) {            
+            setScore();
+        }
+        if (theObservable instanceof Board && theData instanceof Integer[]) {           
+            final Integer[] i = (Integer[]) theData;            
+            setScore(i);
+        }
+        if (theObservable instanceof Board && theData instanceof Boolean) {    
+            myNewGame = true;
+            myFirstInstance = true;
+        }
+        
+        final int level = myLevel;
+        myLevel = myLines / FIVE + 1;
+        myNextLevel = FIVE - myLines % FIVE;
+        if (myLevel != level) {
+            myTimer.setDelay(myTimer.getDelay() - ONE_HUNDRED);        
+        }
+        repaint();
+    }
+    /**
+     * set the initial score at start of new game.
+     */
+    private void setScore() {
+        if (myNewGame) {
+            myScore = 0;
+            
+        }
+        if (!myFirstInstance) {
+            myScore += FOUR;
+            myNewGame = false;
+        }
+        
+        myFirstInstance = false;
+    }
+    /**
+     * helper method that increases the score 
+     * depending on the level and number of lines cleared.
+     * @param theLinesCleared the number of lines just cleared.
+     */
+    private void setScore(final Integer[] theLinesCleared) {
+        myLines += theLinesCleared.length;
+        if (theLinesCleared.length == 1) {
+            myScore += myLevel * FORTY;
+        } else if (theLinesCleared.length == 2) {
+            myScore += myLevel * ONE_HUNDRED;
+        } else if (theLinesCleared.length == THREE) {
+            myScore += myLevel * ONE_HUNDRED * THREE;
+        } else if (theLinesCleared.length == FOUR) {
+            myScore += myLevel * TWELVE_HUNDRED;
+        }
+    }
+}
